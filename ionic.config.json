@@ -1,0 +1,7 @@
+{
+  "name": "matriculas",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular-standalone"
+}
