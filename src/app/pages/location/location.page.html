@@ -1,0 +1,53 @@
+@if (store.loaded() && !hasRecordsWithLocation()) {
+  <div class="empty-state">
+    <i class="fa-solid fa-location-dot empty-icon"></i>
+    <p>Aún no hay matrículas con ubicación.</p>
+    <p class="empty__hint">Escanea una matrícula para marcarla en el mapa.</p>
+  </div>
+} @else if (store.loaded()) {
+  <div class="map-wrapper">
+    <div #mapContainer class="map"></div>
+  </div>
+
+  <div class="list-panel">
+    <div class="search-bar">
+      <i class="fa-solid fa-magnifying-glass search-icon"></i>
+      <input
+        type="text"
+        placeholder="Buscar matrícula o calle"
+        [ngModel]="searchText()"
+        (ngModelChange)="searchText.set($event)"
+      >
+    </div>
+
+
+
+    <ul class="plate-list">
+      @for (record of filteredRecords(); track record.id) {
+        <li (click)="flyTo(record)">
+          <div class="mini-plate" [class.mini-plate--old]="record.format === 'old'">
+            @if (record.format !== 'old') {
+              <span class="mini-plate__band">
+                <img class="mini-plate__stars" src="assets/starts.png" alt="EU">
+                <span class="mini-plate__country">E</span>
+              </span>
+            }
+            <span class="mini-plate__value">{{ record.display }}</span>
+          </div>
+          <div class="plate-info">
+            <span class="plate-address">{{ record.address || record.display }}</span>
+            <div class="plate-meta">
+              <i class="fa-regular fa-clock"></i>
+              <span>{{ record.capturedAt | date: 'HH:mm' }}</span>
+              @if (getDistance(record); as dist) {
+                <span class="plate-sep">·</span>
+                <span>{{ dist }}</span>
+              }
+            </div>
+          </div>
+          <i class="fa-solid fa-chevron-right list-arrow"></i>
+        </li>
+      }
+    </ul>
+  </div>
+}

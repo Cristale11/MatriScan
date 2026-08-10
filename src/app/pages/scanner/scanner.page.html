@@ -1,0 +1,60 @@
+<div id="cameraPreview" class="camera-slot"></div>
+
+<div class="overlay">
+  <div class="frame" [class.frame--locked]="scanner.confirmed()">
+    <span class="corner corner--tl"></span>
+    <span class="corner corner--tr"></span>
+    <span class="corner corner--bl"></span>
+    <span class="corner corner--br"></span>
+  </div>
+
+  @if (scanner.errorMessage(); as error) {
+    <div class="error-block" role="alert">
+      <i class="fa-solid fa-camera-rotate error-block__icon"></i>
+      <p class="error-block__msg">{{ error }}</p>
+      <button class="btn btn--primary" (click)="retry()">
+        <i class="fa-solid fa-rotate-right"></i>
+        Reintentar
+      </button>
+    </div>
+  } @else if (scanner.confirmed(); as plate) {
+    <div class="result">
+      <div class="plate" [class.plate--old]="plate.format === 'old'" aria-live="polite">
+        @if (plate.format !== 'old') {
+          <span class="plate__band">
+            <img class="plate__stars" src="assets/starts.png" alt="EU">
+            <span class="plate__country">E</span>
+          </span>
+        }
+        <span class="plate__value">{{ plate.display }}</span>
+      </div>
+      <span class="format-label">{{ formatLabels[plate.format] }}</span>
+
+      <div class="result__actions">
+        <button class="btn btn--primary" (click)="save()" [disabled]="saving()">
+          @if (saving()) {
+            <i class="fa-solid fa-spinner fa-spin"></i>
+            Guardando…
+          } @else {
+            <i class="fa-solid fa-check"></i>
+            Guardar
+          }
+        </button>
+        <button class="btn btn--outline" (click)="discard()" [disabled]="saving()">
+          <i class="fa-solid fa-xmark"></i>
+          Descartar
+        </button>
+      </div>
+    </div>
+  } @else if (scanner.candidate(); as candidate) {
+    <div class="reading">
+      <span class="reading__value">{{ candidate.display }}</span>
+      <div class="reading__bar" [style.--progress]="scanner.progress()">
+        <span></span>
+      </div>
+      <p class="hint">Mantén el encuadre</p>
+    </div>
+  } @else {
+    <p class="hint">Apunta a la matrícula</p>
+  }
+</div>

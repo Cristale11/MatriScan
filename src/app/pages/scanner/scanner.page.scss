@@ -1,0 +1,237 @@
+:host {
+  display: block;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  background: transparent;
+}
+
+.camera-slot {
+  position: absolute;
+  inset: 0;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 1.5rem 1.25rem calc(1.5rem + env(safe-area-inset-bottom));
+  gap: 1.25rem;
+}
+
+/* --- Marco de puntería --------------------------------------------------- */
+
+.frame {
+  position: absolute;
+  top: 26%;
+  left: 8%;
+  right: 8%;
+  aspect-ratio: 2.2 / 1;
+  transition: border-color 160ms ease;
+}
+
+.corner {
+  position: absolute;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 3px solid rgba(180, 200, 255, 0.7);
+}
+
+.corner--tl { top: 0; left: 0; border-right: 0; border-bottom: 0; }
+.corner--tr { top: 0; right: 0; border-left: 0; border-bottom: 0; }
+.corner--bl { bottom: 0; left: 0; border-right: 0; border-top: 0; }
+.corner--br { bottom: 0; right: 0; border-left: 0; border-top: 0; }
+
+.frame--locked .corner {
+  border-color: #5b9cf6;
+}
+
+/* --- La placa ------------------------------------------------------------ */
+
+.plate {
+  display: inline-flex;
+  align-items: stretch;
+  background: #fff;
+  border: 2px solid #10131a;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 12px 32px rgb(0 0 0 / 45%);
+}
+
+.plate__band {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0.35rem 0.45rem;
+  background: #0a3d91;
+  color: #fff;
+  gap: 0.5rem;
+}
+
+.plate__stars {
+  width: 1.5rem;
+  height: auto;
+  object-fit: contain;
+}
+
+.plate__country {
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.plate__value {
+  padding: 0.45rem 1rem;
+  color: #10131a;
+  font-size: clamp(2rem, 11vw, 2.75rem);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.plate--old { border-color: #333; }
+
+.format-label {
+  color: rgba(180, 200, 255, 0.75);
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  text-shadow: 0 1px 6px rgb(0 0 0 / 60%);
+}
+
+/* --- Botones ------------------------------------------------------------- */
+
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.85rem 1.5rem;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 150ms ease;
+  -webkit-tap-highlight-color: transparent;
+
+  &:active { opacity: 0.8; }
+
+  i {
+    font-size: 1.1rem;
+  }
+}
+
+.btn--primary {
+  background: #5b9cf6;
+  color: #050a18;
+
+  &:disabled { opacity: 0.5; pointer-events: none; }
+}
+
+.btn--outline {
+  background: transparent;
+  color: rgba(180, 200, 255, 0.7);
+  border: 1.5px solid rgba(91, 156, 246, 0.3);
+
+  &:disabled { opacity: 0.35; pointer-events: none; }
+}
+
+/* --- Lectura en curso ---------------------------------------------------- */
+
+.reading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  max-width: 22rem;
+}
+
+.reading__value {
+  color: #fff;
+  font-size: 1.85rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.12em;
+  text-shadow: 0 2px 12px rgb(0 0 0 / 70%);
+}
+
+.reading__bar {
+  width: 100%;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(91, 156, 246, 0.2);
+  overflow: hidden;
+
+  span {
+    display: block;
+    height: 100%;
+    width: calc(var(--progress, 0) * 100%);
+    background: #5b9cf6;
+    transition: width 140ms ease;
+  }
+}
+
+/* --- Textos -------------------------------------------------------------- */
+
+.hint {
+  margin: 0;
+  color: rgba(200, 215, 255, 0.88);
+  font-size: 0.95rem;
+  text-align: center;
+  text-shadow: 0 1px 8px rgb(0 0 0 / 80%);
+}
+
+.hint--error { color: #f87171; }
+
+.error-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 18rem;
+  text-align: center;
+}
+
+.error-block__icon {
+  font-size: 2.5rem;
+  color: rgba(180, 200, 255, 0.3);
+}
+
+.error-block__msg {
+  margin: 0;
+  color: rgba(200, 215, 255, 0.7);
+  font-size: 0.9rem;
+}
+
+.result {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+.result__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 22rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reading__bar span,
+  .frame {
+    transition: none;
+  }
+}

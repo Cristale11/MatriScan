@@ -1,0 +1,162 @@
+<header class="page-header">
+  <div class="header-top">
+    <div>
+      <h1>Historial</h1>
+      <span class="header-subtitle">{{ subtitle() }}</span>
+    </div>
+    <button class="icon-btn" (click)="copyPlates()" aria-label="Copiar matrículas">
+      <i class="fa-solid fa-copy"></i>
+    </button>
+  </div>
+
+  <div class="search-bar">
+    <i class="fa-solid fa-magnifying-glass search-icon"></i>
+    <input
+      type="text"
+      placeholder="Buscar matrícula"
+      [ngModel]="searchText()"
+      (ngModelChange)="searchText.set($event)"
+    >
+  </div>
+
+  <div class="date-chips">
+    <button
+      class="chip"
+      [class.chip--active]="dateFilter() === 'today' && !hasRange()"
+      (click)="setDateFilter('today')">Hoy</button>
+    <button
+      class="chip"
+      [class.chip--active]="dateFilter() === 'yesterday' && !hasRange()"
+      (click)="setDateFilter('yesterday')">Ayer</button>
+    <button
+      class="chip"
+      [class.chip--active]="dateFilter() === 'week' && !hasRange()"
+      (click)="setDateFilter('week')">Esta semana</button>
+    <button
+      class="chip"
+      [class.chip--active]="dateFilter() === 'all' && !hasRange()"
+      (click)="setDateFilter('all')">Todo</button>
+  </div>
+
+  <div class="filter-row">
+    <div class="custom-select">
+      <button class="custom-select__trigger" [class.custom-select__trigger--active]="typeFilter()" (click)="toggleSelect()">
+        <i class="fa-solid fa-filter"></i>
+        <span>{{ typeLabel() }}</span>
+        <i class="fa-solid fa-chevron-down custom-select__arrow" [class.custom-select__arrow--open]="selectOpen()"></i>
+      </button>
+      @if (selectOpen()) {
+        <div class="custom-select__dropdown">
+          @for (opt of typeOptions; track opt.value) {
+            <button
+              class="custom-select__option"
+              [class.custom-select__option--selected]="typeFilter() === opt.value"
+              (click)="pickType(opt.value)"
+            >
+              <span>{{ opt.label }}</span>
+              @if (typeFilter() === opt.value) {
+                <i class="fa-solid fa-check"></i>
+              }
+            </button>
+          }
+        </div>
+      }
+    </div>
+
+    <button class="date-trigger" [class.date-trigger--active]="hasRange()" (click)="toggleCalendar()">
+      <i class="fa-solid fa-calendar-days"></i>
+      <span>{{ rangeLabel() }}</span>
+      @if (hasRange()) {
+        <i class="fa-solid fa-xmark date-trigger__clear" (click)="clearRange(); $event.stopPropagation()"></i>
+      }
+    </button>
+  </div>
+
+  @if (calendarOpen()) {
+    <div class="calendar">
+      <div class="calendar__nav">
+        <button (click)="prevMonth()"><i class="fa-solid fa-chevron-left"></i></button>
+        <span class="calendar__title">{{ calendarTitle() }}</span>
+        <button (click)="nextMonth()"><i class="fa-solid fa-chevron-right"></i></button>
+      </div>
+      <div class="calendar__weekdays">
+        <span>L</span><span>M</span><span>X</span><span>J</span><span>V</span><span>S</span><span>D</span>
+      </div>
+      <div class="calendar__grid">
+        @for (day of calendarDays(); track $index) {
+          <button
+            class="calendar__day"
+            [class.calendar__day--other]="!day.currentMonth"
+            [class.calendar__day--today]="day.isToday"
+            [class.calendar__day--in-range]="day.inRange"
+            [class.calendar__day--start]="day.isStart"
+            [class.calendar__day--end]="day.isEnd"
+            (click)="selectDay(day)"
+          >{{ day.day }}</button>
+        }
+      </div>
+    </div>
+  }
+</header>
+
+<main>
+  @if (store.loaded() && !store.records().length) {
+    <div class="empty">
+      <i class="fa-solid fa-list empty-icon"></i>
+      <p>Todavía no has guardado ninguna matrícula.</p>
+      <p class="empty__hint">Vuelve al escáner y apunta a una placa.</p>
+    </div>
+  } @else if (groupedRecords().length) {
+    <div class="records-list">
+      @for (group of groupedRecords(); track group.label) {
+        <div class="day-header">
+          <span class="day-label">{{ group.label }}</span>
+          <span class="day-count">{{ group.count }} {{ group.count === 1 ? 'registro' : 'registros' }}</span>
+        </div>
+        @for (record of group.records; track record.id) {
+          <div class="record-card">
+            <div class="mini-plate" [class.mini-plate--old]="record.format === 'old'">
+              @if (record.format !== 'old') {
+                <span class="mini-plate__band">
+                  <img class="mini-plate__stars" src="assets/starts.png" alt="EU">
+                  <span class="mini-plate__country">E</span>
+                </span>
+              }
+              <span class="mini-plate__value">{{ record.display }}</span>
+            </div>
+            <div class="record-info">
+              <span class="record-time">
+                <i class="fa-regular fa-clock"></i>
+                {{ record.capturedAt | date: 'HH:mm' }}
+              </span>
+              @if (record.address) {
+                <span class="record-location">
+                  <i class="fa-solid fa-location-dot"></i>
+                  {{ record.address }}
+                </span>
+              } @else if (record.lat != null && record.lng != null) {
+                <span class="record-location">
+                  <i class="fa-solid fa-location-dot"></i>
+                  {{ record.lat!.toFixed(4) }}, {{ record.lng!.toFixed(4) }}
+                </span>
+              }
+            </div>
+            <div class="record-actions">
+              <span class="format-badge" [attr.data-format]="record.format">
+                {{ formatLabels[record.format] }}
+              </span>
+              <button class="delete-btn" (click)="store.remove(record.id)" aria-label="Eliminar">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+            </div>
+          </div>
+        }
+      }
+    </div>
+  } @else if (store.loaded()) {
+    <div class="empty">
+      <i class="fa-solid fa-filter empty-icon"></i>
+      <p>No hay resultados con estos filtros.</p>
+    </div>
+  }
+</main>

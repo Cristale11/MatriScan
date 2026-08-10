@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Matrículas</string>
+    <string name="title_activity_main">Matrículas</string>
+    <string name="package_name">com.cristian.matriculas</string>
+    <string name="custom_url_scheme">com.cristian.matriculas</string>
+</resources>

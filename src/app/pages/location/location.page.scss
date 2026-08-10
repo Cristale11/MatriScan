@@ -1,0 +1,261 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  background: #05070b;
+  color: #e0e8ff;
+}
+
+/* ---- Map --------------------------------------------------------------- */
+
+.map-wrapper {
+  flex: 1.2;
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.map {
+  position: absolute;
+  inset: 0;
+}
+
+/* ---- List panel (bottom sheet) ----------------------------------------- */
+
+.list-panel {
+  padding: 0 0.75rem 0.75rem;
+  flex: 1;
+  background: #0f1524;
+  border-radius: 16px 16px 0 0;
+  margin-top: -19px;
+  position: relative;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.35);
+  gap: 20px;
+}
+
+/* ---- Search bar -------------------------------------------------------- */
+
+.search-bar {
+  margin-top: 1.55rem;
+  position: relative;
+  input {
+    width: 100%;
+    padding: 0.55rem 0.75rem 0.55rem 2.15rem;
+    border: 1px solid rgba(91, 156, 246, 0.12);
+    border-radius: 10px;
+    background: rgba(91, 156, 246, 0.06);
+    color: #e0e8ff;
+    font-size: 0.85rem;
+    outline: none;
+    box-sizing: border-box;
+
+    &::placeholder { color: rgba(160, 180, 220, 0.35); }
+    &:focus { border-color: rgba(91, 156, 246, 0.3); }
+  }
+}
+
+.search-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.8rem;
+  color: rgba(160, 180, 220, 0.35);
+  pointer-events: none;
+}
+
+/* ---- Plate list -------------------------------------------------------- */
+
+.plate-list {
+  flex: 1;
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0.75rem;
+  overflow-y: auto;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    margin-bottom: 0;
+    background: rgba(91, 156, 246, 0.04);
+    border: 1px solid rgba(91, 156, 246, 0.08);
+    border-radius: 14px;
+    cursor: pointer;
+    transition: background 150ms;
+    -webkit-tap-highlight-color: transparent;
+
+    &:active { background: rgba(91, 156, 246, 0.1); }
+  }
+}
+
+/* ---- Mini plate -------------------------------------------------------- */
+
+.mini-plate {
+  display: inline-flex;
+  align-items: stretch;
+  background: #0a3d91;
+  border: 1px solid #111;
+  border-radius: 4px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.mini-plate--old { border-color: #444; }
+
+.mini-plate__band {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0.2rem 0.15rem;
+  background: #0a3d91;
+  color: #fff;
+  gap: 0.35rem;
+}
+
+.mini-plate__stars {
+  width: 0.7rem;
+  height: auto;
+  object-fit: contain;
+}
+
+.mini-plate__country {
+  font-size: 0.5rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.mini-plate__value {
+  display: flex;
+  padding: 0.35rem 0.5rem;
+  background: #fff;
+  color: #10131a;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  justify-content: center;
+  align-items: center;
+}
+
+/* ---- Plate info -------------------------------------------------------- */
+
+.plate-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.plate-address {
+  font-size: 0.9rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.plate-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.72rem;
+  color: rgba(160, 180, 220, 0.4);
+
+  i { font-size: 0.58rem; }
+}
+
+.plate-sep { color: rgba(160, 180, 220, 0.25); }
+
+.list-arrow {
+  font-size: 0.7rem;
+  color: rgba(160, 180, 220, 0.2);
+  flex-shrink: 0;
+}
+
+/* ---- Empty state ------------------------------------------------------- */
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  flex: 1;
+  padding: 2rem;
+  text-align: center;
+  color: rgba(160, 180, 220, 0.45);
+
+  p { margin: 0; }
+}
+
+.empty-icon {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+  opacity: 0.5;
+}
+
+.empty__hint {
+  font-size: 0.875rem;
+  opacity: 0.7;
+}
+
+/* ---- Map markers (Leaflet) --------------------------------------------- */
+
+:host ::ng-deep .plate-marker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow: visible !important;
+}
+
+:host ::ng-deep .plate-marker__dot {
+  width: 14px;
+  height: 14px;
+  background: #3d8bff;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+:host ::ng-deep .plate-marker__label {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  background: rgba(13, 18, 32, 0.92);
+  color: #e0e8ff;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 0.3rem 0.6rem;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(91, 156, 246, 0.15);
+  transition: border-color 250ms, box-shadow 250ms;
+}
+
+:host ::ng-deep .plate-marker__label--active {
+  border-color: #5b9cf6;
+}
+
+/* ---- Leaflet overrides ------------------------------------------------- */
+
+:host ::ng-deep .leaflet-control-attribution {
+  background: rgba(5, 7, 11, 0.7) !important;
+  color: rgba(160, 180, 220, 0.35) !important;
+  font-size: 0.55rem !important;
+  padding: 2px 6px !important;
+  border-radius: 4px 0 0 0 !important;
+
+  a { color: rgba(160, 180, 220, 0.45) !important; }
+}

@@ -33,6 +33,16 @@
                 "glob": "**/*",
                 "input": "src/assets",
                 "output": "assets"
+              },
+              {
+                "glob": "ort-wasm-simd-threaded*.wasm",
+                "input": "node_modules/onnxruntime-web/dist",
+                "output": "assets/onnx"
+              },
+              {
+                "glob": "ort-wasm-simd-threaded*.mjs",
+                "input": "node_modules/onnxruntime-web/dist",
+                "output": "assets/onnx"
               }
             ],
             "styles": ["src/global.scss", "src/theme/variables.scss"],
@@ -49,8 +59,8 @@
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "2kb",
-                  "maximumError": "4kb"
+                  "maximumWarning": "6kb",
+                  "maximumError": "10kb"
                 }
               ],
               "fileReplacements": [
