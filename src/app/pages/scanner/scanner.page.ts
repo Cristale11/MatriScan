@@ -1,7 +1,8 @@
 import { Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { ScannerService } from '../../core/scanner/scanner.service';
 import { PlateStore } from '../../core/storage/plate-store.service';
-import { FORMAT_LABELS } from '../../core/plate/plate-parser';
+import { FORMAT_LABELS, PlateMatch } from '../../core/plate/plate-parser';
+import { bandCode, countryName } from '../../core/plate/country-codes';
 
 @Component({
   selector: 'app-scanner',
@@ -59,6 +60,7 @@ export class ScannerPage implements OnInit, OnDestroy {
         value: plate.value,
         display: plate.display,
         format: plate.format,
+        country: plate.country,
         lat,
         lng,
         address,
@@ -67,6 +69,20 @@ export class ScannerPage implements OnInit, OnDestroy {
     } finally {
       this.saving.set(false);
     }
+  }
+
+  toggleInternational(): void {
+    this.scanner.setInternational(!this.scanner.international());
+  }
+
+  /** Letra de la banda azul, o null si la placa no lleva banda. */
+  band(plate: PlateMatch): string | null {
+    return bandCode(plate.format, plate.country);
+  }
+
+  /** "Francia" si se ha leído el distintivo; si no, "Extranjera". */
+  label(plate: PlateMatch): string {
+    return countryName(plate.country) ?? this.formatLabels[plate.format];
   }
 
   async retry(): Promise<void> {

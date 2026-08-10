@@ -116,10 +116,10 @@
         @for (record of group.records; track record.id) {
           <div class="record-card">
             <div class="mini-plate" [class.mini-plate--old]="record.format === 'old'">
-              @if (record.format !== 'old') {
+              @if (band(record); as code) {
                 <span class="mini-plate__band">
                   <img class="mini-plate__stars" src="assets/starts.png" alt="EU">
-                  <span class="mini-plate__country">E</span>
+                  <span class="mini-plate__country">{{ code }}</span>
                 </span>
               }
               <span class="mini-plate__value">{{ record.display }}</span>
@@ -143,7 +143,7 @@
             </div>
             <div class="record-actions">
               <span class="format-badge" [attr.data-format]="record.format">
-                {{ formatLabels[record.format] }}
+                {{ label(record) }}
               </span>
               <button class="delete-btn" (click)="store.remove(record.id)" aria-label="Eliminar">
                 <i class="fa-solid fa-trash-can"></i>

@@ -12,6 +12,8 @@
  * así que se puede testear sin levantar nada.
  */
 
+import { isCountryCode } from './country-codes';
+
 /** Letras válidas en matrículas modernas: sin vocales, sin Ñ y sin Q. */
 export const VALID_LETTERS = 'BCDFGHJKLMNPRSTVWXYZ';
 
@@ -56,7 +58,7 @@ const MOPED_DIGIT_TO_LETTER: Record<string, string> = {
   '0': 'O', '1': 'I', '2': 'Z', '5': 'S', '6': 'G', '8': 'B',
 };
 
-export type PlateFormat = 'modern' | 'moped' | 'legacy' | 'old' | 'special';
+export type PlateFormat = 'modern' | 'moped' | 'legacy' | 'old' | 'special' | 'foreign';
 
 export const FORMAT_LABELS: Record<PlateFormat, string> = {
   modern: 'Moderna',
@@ -64,6 +66,7 @@ export const FORMAT_LABELS: Record<PlateFormat, string> = {
   legacy: 'Provincial',
   old: 'Antigua',
   special: 'Especial',
+  foreign: 'Extranjera',
 };
 
 export interface PlateMatch {
@@ -73,6 +76,11 @@ export interface PlateMatch {
   display: string;
   format: PlateFormat;
   corrections: number;
+  /**
+   * Distintivo de la banda azul en las extranjeras (F, D, P...), cuando el OCR
+   * consigue leerlo. Las españolas no lo rellenan: se asume 'E'.
+   */
+  country?: string;
 }
 
 interface ScoredMatch extends PlateMatch {}
@@ -83,6 +91,12 @@ export interface ParseOptions {
    * Por defecto detecta todos los formatos españoles.
    */
   modernOnly?: boolean;
+  /**
+   * Modo internacional: si ningún formato español encaja, acepta cualquier
+   * secuencia con pinta de matrícula. Pensado para usarse con el texto del
+   * recorte que devuelve YOLO, que ya viene acotado a la placa física.
+   */
+  allowForeign?: boolean;
 }
 
 /** Quita acentos y pasa a mayúsculas. Los saltos de línea del OCR se conservan. */
@@ -207,55 +221,89 @@ function bestScored<T extends ScoredMatch>(
 }
 
 /**
- * Intenta todos los formatos sobre un texto ya compactado (sin separadores).
+ * Los formatos se prueban en este orden, del más específico al más laxo.
+ * Provincial y antigua van al final porque "provincia + dígitos" encaja con
+ * casi cualquier cosa: si se probaran antes, un "ITV 2025" de un cartel de
+ * fondo ganaría a la matrícula real que está en la línea siguiente.
+ */
+const FORMAT_TIERS = ['prefixed', 'modern', 'legacy', 'old'] as const;
+type FormatTier = (typeof FORMAT_TIERS)[number];
+
+/**
+ * Tope de correcciones OCR en el formato provincial. Es el más permisivo de
+ * todos (provincia + dígitos + serie), así que sin límite convierte palabras
+ * corrientes en matrículas. Una placa real mal leída se recupera en el
+ * siguiente fotograma; un falso positivo se guarda para siempre.
+ */
+const MAX_LEGACY_CORRECTIONS = 1;
+
+/**
+ * Intenta UN formato sobre un texto ya compactado (sin separadores).
  * Para los formatos con corrección OCR, prueba todas las posiciones de ventana
  * y devuelve la que necesita menos correcciones (así evita falsos positivos
  * por ventana desalineada, como leer 1880GKZ en vez de 8806KZS).
+ *
+ * `strict` (modo internacional) exige lectura sin correcciones. Junto con
+ * saltarse los tiers laxos, evita que la francesa AB-123-CD se guarde como
+ * la española A-8123-CD.
  */
-function matchFormats(compact: string, modernOnly: boolean): PlateMatch | null {
+function matchTier(compact: string, tier: FormatTier, strict: boolean): PlateMatch | null {
   if (compact.length < 5) return null;
 
-  // 1. Prefijada: C/R/H + 4 dígitos + 3 letras (8 chars)
-  if (!modernOnly) {
-    const hit = bestScored(compact, 8, normalizePrefixed);
-    if (hit) return hit;
-  }
-
-  // 2. Moderna: 4 dígitos + 3 consonantes (7 chars)
-  {
-    const hit = bestScored(compact, 7, normalizeModern);
-    if (hit) return hit;
-  }
-
-  if (modernOnly) return null;
-
-  // 3. Provincial (1971–2000): provincia + 4 dígitos + 1-2 letras de serie
-  for (let len = 8; len >= 6; len--) {
-    for (let i = 0; i + len <= compact.length; i++) {
-      const hit = normalizeLegacy(compact.slice(i, i + len));
-      if (hit) return hit;
+  switch (tier) {
+    // Prefijada: C/R/H + 4 dígitos + 3 letras (8 chars)
+    case 'prefixed': {
+      const hit = bestScored(compact, 8, normalizePrefixed);
+      return hit && (!strict || hit.corrections === 0) ? hit : null;
     }
-  }
 
-  // 4. Antigua (pre-1971): provincia + 4-6 dígitos
-  for (let len = 8; len >= 5; len--) {
-    for (let i = 0; i + len <= compact.length; i++) {
-      const hit = normalizeOld(compact.slice(i, i + len));
-      if (hit) return hit;
+    // Moderna: 4 dígitos + 3 consonantes (7 chars)
+    case 'modern': {
+      const hit = bestScored(compact, 7, normalizeModern);
+      return hit && (!strict || hit.corrections === 0) ? hit : null;
     }
-  }
 
-  return null;
+    // Provincial (1971–2000): provincia + 4 dígitos + 1-2 letras de serie
+    case 'legacy': {
+      // Se queda con la lectura que menos correcciones necesita y descarta las
+      // que necesitan más de una: sin ese tope, "SEAT IBIZA" del maletero pasa
+      // por SE-4718-IZ convirtiendo A->4, T->7, I->1 y B->8.
+      let best: PlateMatch | null = null;
+      for (let len = 8; len >= 6; len--) {
+        for (let i = 0; i + len <= compact.length; i++) {
+          const hit = normalizeLegacy(compact.slice(i, i + len));
+          if (!hit || hit.corrections > MAX_LEGACY_CORRECTIONS) continue;
+          if (!best || hit.corrections < best.corrections) best = hit;
+          if (best.corrections === 0) return best;
+        }
+      }
+      return best;
+    }
+
+    // Antigua (pre-1971): provincia + 4-6 dígitos
+    case 'old':
+      for (let len = 8; len >= 5; len--) {
+        for (let i = 0; i + len <= compact.length; i++) {
+          const hit = normalizeOld(compact.slice(i, i + len));
+          if (hit) return hit;
+        }
+      }
+      return null;
+  }
 }
 
 /**
  * Busca una matrícula dentro del texto que ha devuelto el OCR.
  *
- * Estrategia en dos pasadas:
- *   1.ª Cada línea del OCR se compacta y se analiza por separado.
- *   2.ª Si no hay acierto, se fusionan todas las líneas en un solo texto.
- *       Esto es clave para las placas verticales de ciclomotor, que el OCR
- *       devuelve partidas en 3 líneas (ej. "C0 / 336 / BBB").
+ * Recorre los formatos de más específico a más laxo, y dentro de cada uno
+ * mira primero las líneas sueltas y luego las fusiones de líneas adyacentes
+ * (las placas verticales de ciclomotor llegan partidas en 3 líneas, como
+ * "C0 / 336 / BBB").
+ *
+ * El orden importa: agotar un formato en todo el texto antes de pasar al
+ * siguiente evita que el ruido de fondo gane a la matrícula real. Con "ITV
+ * 2025" en un cartel y "1234 BCD" en la placa, mirar línea por línea daría
+ * la falsa "V 2025" como antigua sin llegar a ver la moderna verdadera.
  */
 export function extractPlate(rawText: string, options: ParseOptions = {}): PlateMatch | null {
   const compactLines: string[] = [];
@@ -265,26 +313,78 @@ export function extractPlate(rawText: string, options: ParseOptions = {}): Plate
     if (compact) compactLines.push(compact);
   }
 
-  // 1.ª pasada: cada línea por separado
-  for (const compact of compactLines) {
-    const hit = matchFormats(compact, !!options.modernOnly);
-    if (hit) return hit;
-  }
+  const strict = !!options.allowForeign;
+  const tiers: readonly FormatTier[] = options.modernOnly
+    ? ['modern']
+    : strict
+      ? ['prefixed', 'modern']
+      : FORMAT_TIERS;
 
-  // 2.ª pasada: ventanas de líneas adyacentes (placas verticales).
-  // Ventanas grandes primero para que ciclomotor (3 líneas: C0/336/BBB)
-  // se detecte antes de que una ventana menor genere un falso positivo.
-  if (compactLines.length > 1) {
+  for (const tier of tiers) {
+    for (const compact of compactLines) {
+      const hit = matchTier(compact, tier, strict);
+      if (hit) return hit;
+    }
+
+    // Ventanas grandes primero para que ciclomotor (3 líneas: C0/336/BBB)
+    // se detecte antes de que una ventana menor genere un falso positivo.
     for (let size = Math.min(4, compactLines.length); size >= 2; size--) {
       for (let start = 0; start + size <= compactLines.length; start++) {
         const merged = compactLines.slice(start, start + size).join('');
-        const hit = matchFormats(merged, !!options.modernOnly);
+        const hit = matchTier(merged, tier, strict);
         if (hit) return hit;
       }
     }
   }
 
+  // Último recurso en modo internacional: cualquier cosa con pinta de placa.
+  if (options.allowForeign) {
+    return matchForeign(compactLines);
+  }
+
   return null;
+}
+
+/** Una secuencia con pinta de matrícula: 5-10 caracteres, con dígito y letra. */
+function looksLikePlate(s: string): boolean {
+  return s.length >= 5 && s.length <= 10 && /\d/.test(s) && /[A-Z]/.test(s);
+}
+
+/**
+ * Acepta secuencias alfanuméricas genéricas y, si aparece, lee el distintivo
+ * de país de la banda azul. `corrections: 1` a propósito: obliga al votador a
+ * confirmar la lectura dos veces, porque aquí no hay formato que valide.
+ */
+function matchForeign(compactLines: string[]): PlateMatch | null {
+  let best: string | null = null;
+  let country: string | undefined;
+
+  // La banda azul sale como una línea suelta de 1-3 letras (F, D, NL, IRL...).
+  for (const line of compactLines) {
+    if (line.length <= 3 && isCountryCode(line)) {
+      country = line;
+      break;
+    }
+  }
+
+  for (const line of compactLines) {
+    if (line === country) continue;
+    if (!looksLikePlate(line)) continue;
+    if (!best || line.length > best.length) best = line;
+  }
+
+  // Si el OCR pega la banda a la matrícula ("F AB-123-CD" -> "FAB123CD") se
+  // deja tal cual a propósito: separar el prefijo sería adivinar. La alemana
+  // MAB1234 empieza por el código de Malta, y partirla daría un país inventado.
+
+  // Placas en dos líneas (motos, placas suizas...): probar la fusión.
+  if (!best && compactLines.length > 1) {
+    const merged = compactLines.filter((l) => l !== country).join('');
+    if (looksLikePlate(merged)) best = merged;
+  }
+
+  if (!best) return null;
+  return { value: best, display: best, format: 'foreign', corrections: 1, country };
 }
 
 /** Valida una matrícula ya escrita (para la corrección manual). */

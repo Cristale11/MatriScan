@@ -3,6 +3,7 @@ import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PlateStore, PlateRecord } from '../../core/storage/plate-store.service';
 import { FORMAT_LABELS, PlateFormat } from '../../core/plate/plate-parser';
+import { bandCode, countryName } from '../../core/plate/country-codes';
 
 type DateFilter = 'today' | 'yesterday' | 'week' | 'all';
 
@@ -53,6 +54,7 @@ export class HistoryPage implements OnInit {
     { value: 'legacy', label: 'Provincial' },
     { value: 'old', label: 'Antigua' },
     { value: 'special', label: 'Especial' },
+    { value: 'foreign', label: 'Extranjera' },
   ];
   readonly typeLabel = computed(() =>
     this.typeOptions.find(o => o.value === this.typeFilter())?.label ?? 'Todos los tipos');
@@ -202,6 +204,16 @@ export class HistoryPage implements OnInit {
     const count = this.filteredRecords().length;
     return `${count} ${count === 1 ? 'matrícula' : 'matrículas'}`;
   });
+
+  /** Letra de la banda azul, o null si la placa no lleva banda. */
+  band(record: PlateRecord): string | null {
+    return bandCode(record.format, record.country);
+  }
+
+  /** "Francia" si se leyó el distintivo; si no, la etiqueta del formato. */
+  label(record: PlateRecord): string {
+    return countryName(record.country) ?? this.formatLabels[record.format];
+  }
 
   ngOnInit(): void {
     void this.store.load();

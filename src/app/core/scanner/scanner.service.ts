@@ -22,6 +22,9 @@ export class ScannerService {
   readonly status = signal<ScannerStatus>('idle');
   readonly errorMessage = signal<string | null>(null);
 
+  /** Modo internacional: YOLO + OCR sin exigir formato español. */
+  readonly international = signal(false);
+
   /** Última matrícula confirmada por la votación. */
   readonly confirmed = signal<PlateMatch | null>(null);
 
@@ -69,6 +72,15 @@ export class ScannerService {
     this.votes.set(0);
   }
 
+  setInternational(on: boolean): void {
+    if (this.international() === on) return;
+    this.international.set(on);
+    this.ocr.setInternational?.(on);
+    this.voter.reset();
+    this.candidate.set(null);
+    this.votes.set(0);
+  }
+
   private async loop(): Promise<void> {
     while (this.loopActive) {
       // Mientras hay una matrícula esperando decisión del usuario, no
@@ -79,7 +91,7 @@ export class ScannerService {
       }
 
       const text = await this.ocr.readFrame();
-      const match = extractPlate(text);
+      const match = extractPlate(text, { allowForeign: this.international() });
       console.log('[ocr]', JSON.stringify(text), '->', match?.value ?? null);
       const hit = this.voter.push(match);
 

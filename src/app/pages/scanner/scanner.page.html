@@ -1,7 +1,21 @@
 <div id="cameraPreview" class="camera-slot"></div>
 
 <div class="overlay">
-  <div class="frame" [class.frame--locked]="scanner.confirmed()">
+  <button
+    class="mode-toggle"
+    [class.mode-toggle--active]="scanner.international()"
+    (click)="toggleInternational()"
+    type="button"
+  >
+    <i class="fa-solid" [class.fa-location-dot]="!scanner.international()" [class.fa-globe]="scanner.international()"></i>
+    {{ scanner.international() ? 'Internacional' : 'España' }}
+  </button>
+
+  <div
+    class="frame"
+    [class.frame--locked]="scanner.confirmed()"
+    [class.frame--ignored]="scanner.international()"
+  >
     <span class="corner corner--tl"></span>
     <span class="corner corner--tr"></span>
     <span class="corner corner--bl"></span>
@@ -20,15 +34,15 @@
   } @else if (scanner.confirmed(); as plate) {
     <div class="result">
       <div class="plate" [class.plate--old]="plate.format === 'old'" aria-live="polite">
-        @if (plate.format !== 'old') {
+        @if (band(plate); as code) {
           <span class="plate__band">
             <img class="plate__stars" src="assets/starts.png" alt="EU">
-            <span class="plate__country">E</span>
+            <span class="plate__country">{{ code }}</span>
           </span>
         }
         <span class="plate__value">{{ plate.display }}</span>
       </div>
-      <span class="format-label">{{ formatLabels[plate.format] }}</span>
+      <span class="format-label">{{ label(plate) }}</span>
 
       <div class="result__actions">
         <button class="btn btn--primary" (click)="save()" [disabled]="saving()">
@@ -55,6 +69,8 @@
       <p class="hint">Mantén el encuadre</p>
     </div>
   } @else {
-    <p class="hint">Apunta a la matrícula</p>
+    <p class="hint">
+      {{ scanner.international() ? 'Apunta al vehículo' : 'Apunta a la matrícula' }}
+    </p>
   }
 </div>

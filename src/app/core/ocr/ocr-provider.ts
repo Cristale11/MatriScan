@@ -17,6 +17,13 @@ export interface OcrProvider {
 
   /** Para la cámara y libera recursos. */
   stop(): Promise<void>;
+
+  /**
+   * Cambia entre modo España (rápido, OCR directo) y modo internacional
+   * (detección de placa con YOLO antes del OCR). Opcional: los providers
+   * que no distinguen modos pueden no implementarlo.
+   */
+  setInternational?(on: boolean): void;
 }
 
 export const OCR_PROVIDER = new InjectionToken<OcrProvider>('OCR_PROVIDER');

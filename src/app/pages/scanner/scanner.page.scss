@@ -22,15 +22,55 @@
   gap: 1.25rem;
 }
 
+/* --- Selector de modo ---------------------------------------------------- */
+
+.mode-toggle {
+  position: absolute;
+  top: calc(1rem + env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: 1.5px solid rgba(91, 156, 246, 0.3);
+  border-radius: 999px;
+  background: rgba(5, 10, 24, 0.55);
+  backdrop-filter: blur(8px);
+  color: rgba(200, 215, 255, 0.88);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 150ms ease, color 150ms ease;
+  -webkit-tap-highlight-color: transparent;
+
+  i { font-size: 0.9rem; }
+
+  &:active { opacity: 0.8; }
+}
+
+.mode-toggle--active {
+  border-color: #5b9cf6;
+  color: #5b9cf6;
+}
+
 /* --- Marco de puntería --------------------------------------------------- */
 
+/* Estas medidas van a la par con SCAN_FRAME en core/scanner/scan-frame.ts,
+   que es lo que usa el filtro para descartar el texto de fuera del marco. */
 .frame {
   position: absolute;
   top: 26%;
   left: 8%;
   right: 8%;
   aspect-ratio: 2.2 / 1;
-  transition: border-color 160ms ease;
+  transition: border-color 160ms ease, opacity 160ms ease;
+}
+
+/* En modo internacional YOLO busca la placa en todo el fotograma, así que el
+   marco no delimita nada: se atenúa para no dar a entender lo contrario. */
+.frame--ignored {
+  opacity: 0.25;
 }
 
 .corner {

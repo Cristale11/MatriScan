@@ -21,6 +21,7 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        registerPlugin(PlateDetectorPlugin.class);
         super.onCreate(savedInstanceState);
         requestMissingPermissions();
     }

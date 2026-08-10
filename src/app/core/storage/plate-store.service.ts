@@ -7,6 +7,8 @@ export interface PlateRecord {
   value: string;
   display: string;
   format: PlateFormat;
+  /** Distintivo de país en las extranjeras (F, D, P...). */
+  country?: string;
   /** ISO 8601 */
   capturedAt: string;
   note?: string;
