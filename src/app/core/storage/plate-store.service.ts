@@ -9,6 +9,8 @@ export interface PlateRecord {
   format: PlateFormat;
   /** Distintivo de país en las extranjeras (F, D, P...). */
   country?: string;
+  /** ID del evento al que pertenece, si se escaneó con uno activo. */
+  eventId?: string;
   /** ISO 8601 */
   capturedAt: string;
   note?: string;

@@ -4,6 +4,14 @@ import { FormsModule } from '@angular/forms';
 import { PlateStore, PlateRecord } from '../../core/storage/plate-store.service';
 import * as L from 'leaflet';
 
+const MONTHS = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
+
+interface DayGroup {
+  label: string;
+  count: number;
+  records: PlateRecord[];
+}
+
 @Component({
   selector: 'app-location',
   standalone: true,
@@ -38,6 +46,43 @@ export class LocationPage implements OnDestroy {
       r.display.toUpperCase().includes(q) ||
       (r.address?.toUpperCase().includes(q) ?? false),
     );
+  });
+
+  readonly groupedRecords = computed(() => {
+    const records = this.filteredRecords();
+    const groups = new Map<string, PlateRecord[]>();
+
+    for (const record of records) {
+      const date = new Date(record.capturedAt);
+      const key = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key)!.push(record);
+    }
+
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    const result: DayGroup[] = [];
+    for (const [, recs] of groups) {
+      const date = new Date(recs[0].capturedAt);
+      const dayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      const dayMonth = `${date.getDate()} ${MONTHS[date.getMonth()]}`;
+
+      let label: string;
+      if (dayStart.getTime() === today.getTime()) {
+        label = `HOY · ${dayMonth}`;
+      } else if (dayStart.getTime() === yesterday.getTime()) {
+        label = `AYER · ${dayMonth}`;
+      } else {
+        label = dayMonth;
+      }
+
+      result.push({ label, count: recs.length, records: recs });
+    }
+
+    return result;
   });
 
   constructor() {

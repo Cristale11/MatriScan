@@ -4,9 +4,19 @@
       <h1>Historial</h1>
       <span class="header-subtitle">{{ subtitle() }}</span>
     </div>
-    <button class="icon-btn" (click)="copyPlates()" aria-label="Copiar matrículas">
-      <i class="fa-solid fa-copy"></i>
-    </button>
+    <div class="header-btns">
+      <button
+        class="icon-btn"
+        [class.icon-btn--active]="eventFilter()"
+        (click)="toggleEventModal()"
+        aria-label="Eventos"
+      >
+        <i class="fa-solid fa-folder-open"></i>
+      </button>
+      <button class="icon-btn" (click)="copyPlates()" aria-label="Copiar matrículas">
+        <i class="fa-solid fa-copy"></i>
+      </button>
+    </div>
   </div>
 
   <div class="search-bar">
@@ -160,3 +170,11 @@
     </div>
   }
 </main>
+
+@if (eventModalOpen()) {
+  <app-event-modal
+    [selectedId]="eventFilter()"
+    (selected)="onEventSelected($event)"
+    (closed)="eventModalOpen.set(false)"
+  />
+}

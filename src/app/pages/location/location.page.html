@@ -23,30 +23,36 @@
 
 
     <ul class="plate-list">
-      @for (record of filteredRecords(); track record.id) {
-        <li (click)="flyTo(record)">
-          <div class="mini-plate" [class.mini-plate--old]="record.format === 'old'">
-            @if (record.format !== 'old') {
-              <span class="mini-plate__band">
-                <img class="mini-plate__stars" src="assets/starts.png" alt="EU">
-                <span class="mini-plate__country">E</span>
-              </span>
-            }
-            <span class="mini-plate__value">{{ record.display }}</span>
-          </div>
-          <div class="plate-info">
-            <span class="plate-address">{{ record.address || record.display }}</span>
-            <div class="plate-meta">
-              <i class="fa-regular fa-clock"></i>
-              <span>{{ record.capturedAt | date: 'HH:mm' }}</span>
-              @if (getDistance(record); as dist) {
-                <span class="plate-sep">·</span>
-                <span>{{ dist }}</span>
-              }
-            </div>
-          </div>
-          <i class="fa-solid fa-chevron-right list-arrow"></i>
+      @for (group of groupedRecords(); track group.label) {
+        <li class="day-header">
+          <span class="day-label">{{ group.label }}</span>
+          <span class="day-count">{{ group.count }} {{ group.count === 1 ? 'registro' : 'registros' }}</span>
         </li>
+        @for (record of group.records; track record.id) {
+          <li (click)="flyTo(record)">
+            <div class="mini-plate" [class.mini-plate--old]="record.format === 'old'">
+              @if (record.format !== 'old') {
+                <span class="mini-plate__band">
+                  <img class="mini-plate__stars" src="assets/starts.png" alt="EU">
+                  <span class="mini-plate__country">E</span>
+                </span>
+              }
+              <span class="mini-plate__value">{{ record.display }}</span>
+            </div>
+            <div class="plate-info">
+              <span class="plate-address">{{ record.address || record.display }}</span>
+              <div class="plate-meta">
+                <i class="fa-regular fa-clock"></i>
+                <span>{{ record.capturedAt | date: 'HH:mm' }}</span>
+                @if (getDistance(record); as dist) {
+                  <span class="plate-sep">·</span>
+                  <span>{{ dist }}</span>
+                }
+              </div>
+            </div>
+            <i class="fa-solid fa-chevron-right list-arrow"></i>
+          </li>
+        }
       }
     </ul>
   </div>

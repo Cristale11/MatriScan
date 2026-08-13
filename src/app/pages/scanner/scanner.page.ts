@@ -1,6 +1,7 @@
 import { Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { ScannerService } from '../../core/scanner/scanner.service';
 import { PlateStore } from '../../core/storage/plate-store.service';
+import { EventStore } from '../../core/storage/event-store.service';
 import { FORMAT_LABELS, PlateMatch } from '../../core/plate/plate-parser';
 import { bandCode, countryName } from '../../core/plate/country-codes';
 
@@ -13,11 +14,12 @@ import { bandCode, countryName } from '../../core/plate/country-codes';
 export class ScannerPage implements OnInit, OnDestroy {
   readonly scanner = inject(ScannerService);
   readonly store = inject(PlateStore);
+  readonly eventStore = inject(EventStore);
   readonly formatLabels = FORMAT_LABELS;
   readonly saving = signal(false);
 
   async ngOnInit(): Promise<void> {
-    await this.store.load();
+    await Promise.all([this.store.load(), this.eventStore.load()]);
     await this.scanner.start();
   }
 
@@ -61,6 +63,7 @@ export class ScannerPage implements OnInit, OnDestroy {
         display: plate.display,
         format: plate.format,
         country: plate.country,
+        eventId: this.eventStore.activeId() ?? undefined,
         lat,
         lng,
         address,

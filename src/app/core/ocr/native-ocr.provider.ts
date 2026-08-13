@@ -9,6 +9,15 @@ import { frameRect } from '../scanner/scan-frame';
 /** Holgura alrededor del marco, en fracciones de pantalla. */
 const FRAME_MARGIN = 0.08;
 
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('timeout')), ms),
+    ),
+  ]);
+}
+
 /**
  * OCR nativo con dos modos:
  *
@@ -89,7 +98,10 @@ export class NativeOcrProvider implements OcrProvider {
 
   /** Modo internacional: YOLO localiza la placa, ML Kit lee solo el recorte. */
   private async readInternational(base64: string): Promise<string> {
-    const detection = await NativePlateDetector.detect({ image: base64 });
+    const detection = await withTimeout(
+      NativePlateDetector.detect({ image: base64 }),
+      8000,
+    );
     if (!detection.found || !detection.path) return '';
 
     const result = await TextRecognition.processImage({ path: detection.path });

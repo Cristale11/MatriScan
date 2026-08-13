@@ -18,6 +18,7 @@ export class ScannerService {
   private readonly voter = new PlateVoter(2, 1, 2000);
 
   private loopActive = false;
+  private loopEpoch = 0;
 
   readonly status = signal<ScannerStatus>('idle');
   readonly errorMessage = signal<string | null>(null);
@@ -50,9 +51,10 @@ export class ScannerService {
     }
 
     this.loopActive = true;
+    this.loopEpoch++;
     this.status.set('scanning');
     this.errorMessage.set(null);
-    void this.loop();
+    void this.loop(this.loopEpoch);
   }
 
   async stop(): Promise<void> {
@@ -77,33 +79,43 @@ export class ScannerService {
     this.international.set(on);
     this.ocr.setInternational?.(on);
     this.voter.reset();
+    this.confirmed.set(null);
     this.candidate.set(null);
     this.votes.set(0);
+
+    if (this.loopActive) {
+      this.loopEpoch++;
+      void this.loop(this.loopEpoch);
+    }
   }
 
-  private async loop(): Promise<void> {
-    while (this.loopActive) {
-      // Mientras hay una matrícula esperando decisión del usuario, no
-      // gastamos batería leyendo fotogramas.
-      if (this.confirmed()) {
-        await this.sleep(200);
-        continue;
-      }
+  private async loop(epoch: number): Promise<void> {
+    while (this.loopActive && epoch === this.loopEpoch) {
+      try {
+        if (this.confirmed()) {
+          await this.sleep(200);
+          continue;
+        }
 
-      const text = await this.ocr.readFrame();
-      const match = extractPlate(text, { allowForeign: this.international() });
-      console.log('[ocr]', JSON.stringify(text), '->', match?.value ?? null);
-      const hit = this.voter.push(match);
+        const text = await this.ocr.readFrame();
+        if (epoch !== this.loopEpoch) break;
 
-      const state = this.voter.state;
-      this.candidate.set(state.leader);
-      this.votes.set(state.votes);
-      this.threshold.set(state.threshold);
+        const match = extractPlate(text, { allowForeign: this.international() });
+        console.log('[ocr]', JSON.stringify(text), '->', match?.value ?? null);
+        const hit = this.voter.push(match);
 
-      if (hit) {
-        this.confirmed.set(hit);
-        this.candidate.set(null);
-        this.votes.set(0);
+        const state = this.voter.state;
+        this.candidate.set(state.leader);
+        this.votes.set(state.votes);
+        this.threshold.set(state.threshold);
+
+        if (hit) {
+          this.confirmed.set(hit);
+          this.candidate.set(null);
+          this.votes.set(0);
+        }
+      } catch (err) {
+        console.error('[scanner] error en el bucle, reintentando:', err);
       }
 
       await this.sleep(50);

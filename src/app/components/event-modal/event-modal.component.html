@@ -1,0 +1,97 @@
+<div class="modal-backdrop" (click)="close()"></div>
+<div class="event-modal">
+  <div class="event-modal__handle"></div>
+
+  <div class="event-modal__header">
+    <div>
+      <h2 class="event-modal__title">Eventos</h2>
+      <span class="event-modal__subtitle">
+        {{ eventStore.events().length }}
+        {{ eventStore.events().length === 1 ? 'evento guardado' : 'eventos guardados' }}
+      </span>
+    </div>
+    <button class="event-modal__close" (click)="close()">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+  </div>
+
+  <div class="event-modal__search">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <input
+      type="text"
+      placeholder="Buscar evento"
+      [ngModel]="search()"
+      (ngModelChange)="search.set($event)"
+    >
+  </div>
+
+  <div class="event-modal__list">
+    @if (!search().trim()) {
+      <button
+        class="event-modal__item event-modal__item--all"
+        [class.event-modal__item--selected]="!selectedId()"
+        (click)="pick('')"
+      >
+        <span class="event-modal__icon-wrap event-modal__icon-wrap--blue">
+          <i class="fa-solid fa-layer-group"></i>
+        </span>
+        <div class="event-modal__info">
+          <span class="event-modal__name">Todas las matrículas</span>
+          <span class="event-modal__desc">Sin agrupar por evento</span>
+        </div>
+        <span class="event-modal__badge">{{ totalPlates() }}</span>
+      </button>
+
+      @if (eventStore.events().length) {
+        <div class="event-modal__section">
+          <span>TUS EVENTOS</span>
+        </div>
+      }
+    }
+
+    @for (evt of filteredEvents(); track evt.id) {
+      <button
+        class="event-modal__item"
+        [class.event-modal__item--selected]="selectedId() === evt.id"
+        (click)="pick(evt.id)"
+      >
+        <span class="event-modal__icon-wrap">
+          <i class="fa-regular fa-folder"></i>
+        </span>
+        <div class="event-modal__info">
+          <span class="event-modal__name">{{ evt.name }}</span>
+          <span class="event-modal__date">Creado el {{ evt.createdAt | date: "d MMM yyyy" }}</span>
+        </div>
+        <span class="event-modal__badge event-modal__badge--muted">{{ plateCount(evt.id) }}</span>
+        <button class="event-modal__delete" (click)="delete(evt.id, $event)" aria-label="Eliminar evento">
+          <i class="fa-regular fa-trash-can"></i>
+        </button>
+      </button>
+    }
+
+    @if (search().trim() && !filteredEvents().length) {
+      <p class="event-modal__empty">Sin resultados</p>
+    }
+  </div>
+
+  @if (creating()) {
+    <div class="event-modal__create">
+      <input
+        type="text"
+        placeholder="Nombre del evento"
+        [ngModel]="newName()"
+        (ngModelChange)="newName.set($event)"
+        (keydown.enter)="confirmCreate()"
+        (keydown.escape)="cancelCreate()"
+      >
+      <button class="event-modal__confirm" (click)="confirmCreate()" [disabled]="!newName().trim()">
+        <i class="fa-solid fa-check"></i>
+      </button>
+    </div>
+  } @else {
+    <button class="event-modal__add" (click)="startCreate()">
+      <i class="fa-solid fa-plus"></i>
+      Crear evento
+    </button>
+  }
+</div>

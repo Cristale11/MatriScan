@@ -2,8 +2,10 @@ import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PlateStore, PlateRecord } from '../../core/storage/plate-store.service';
+import { EventStore } from '../../core/storage/event-store.service';
 import { FORMAT_LABELS, PlateFormat } from '../../core/plate/plate-parser';
 import { bandCode, countryName } from '../../core/plate/country-codes';
+import { EventModalComponent } from '../../components/event-modal/event-modal.component';
 
 type DateFilter = 'today' | 'yesterday' | 'week' | 'all';
 
@@ -32,12 +34,13 @@ const MONTH_NAMES = [
 @Component({
   selector: 'app-history',
   standalone: true,
-  imports: [DatePipe, FormsModule],
+  imports: [DatePipe, FormsModule, EventModalComponent],
   templateUrl: './history.page.html',
   styleUrl: './history.page.scss',
 })
 export class HistoryPage implements OnInit {
   readonly store = inject(PlateStore);
+  readonly eventStore = inject(EventStore);
   readonly formatLabels = FORMAT_LABELS;
 
   readonly searchText = signal('');
@@ -45,8 +48,10 @@ export class HistoryPage implements OnInit {
   readonly typeFilter = signal<PlateFormat | ''>('');
   readonly rangeStart = signal<Date | null>(null);
   readonly rangeEnd = signal<Date | null>(null);
+  readonly eventFilter = signal<string | ''>('');
 
   readonly selectOpen = signal(false);
+  readonly eventModalOpen = signal(false);
   readonly typeOptions: { value: PlateFormat | ''; label: string }[] = [
     { value: '', label: 'Todos los tipos' },
     { value: 'modern', label: 'Moderna' },
@@ -124,6 +129,11 @@ export class HistoryPage implements OnInit {
     const type = this.typeFilter();
     if (type) {
       records = records.filter(r => r.format === type);
+    }
+
+    const evtId = this.eventFilter();
+    if (evtId) {
+      records = records.filter(r => r.eventId === evtId);
     }
 
     const start = this.rangeStart();
@@ -217,6 +227,7 @@ export class HistoryPage implements OnInit {
 
   ngOnInit(): void {
     void this.store.load();
+    void this.eventStore.load();
   }
 
   setDateFilter(filter: DateFilter): void {
@@ -227,7 +238,10 @@ export class HistoryPage implements OnInit {
 
   toggleSelect(): void {
     this.selectOpen.update(v => !v);
-    if (this.selectOpen()) this.calendarOpen.set(false);
+    if (this.selectOpen()) {
+      this.calendarOpen.set(false);
+      this.eventModalOpen.set(false);
+    }
   }
 
   pickType(value: PlateFormat | ''): void {
@@ -237,7 +251,10 @@ export class HistoryPage implements OnInit {
 
   toggleCalendar(): void {
     this.calendarOpen.update(v => !v);
-    if (this.calendarOpen()) this.selectOpen.set(false);
+    if (this.calendarOpen()) {
+      this.selectOpen.set(false);
+      this.eventModalOpen.set(false);
+    }
   }
 
   prevMonth(): void {
@@ -286,6 +303,20 @@ export class HistoryPage implements OnInit {
   copyPlates(): void {
     const text = this.filteredRecords().map(r => r.display).join('\n');
     void navigator.clipboard.writeText(text);
+  }
+
+  toggleEventModal(): void {
+    this.eventModalOpen.update(v => !v);
+    if (this.eventModalOpen()) {
+      this.selectOpen.set(false);
+      this.calendarOpen.set(false);
+    }
+  }
+
+  onEventSelected(id: string): void {
+    this.eventFilter.set(id || '');
+    void this.eventStore.setActive(id || null);
+    this.eventModalOpen.set(false);
   }
 
   private makeDay(
